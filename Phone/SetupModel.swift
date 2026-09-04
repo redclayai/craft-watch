@@ -11,23 +11,25 @@ final class SetupModel {
     enum State: Equatable {
         case idle
         case connecting
-        case connected(space: String?, sentToWatch: Bool)
+        case connected(space: String?)
         case failed(String)
     }
 
     private(set) var state: State = .idle
-    private(set) var isWatchPaired = false
 
     private let oauth = CraftOAuth()
     private let store = CredentialStore.shared
     private let connectivity = PhoneConnectivity.shared
     private var presenter = AuthPresentationAnchor()
 
+    /// Kicks off session activation. Watch availability and delivery status are read from
+    /// `PhoneConnectivity` by the view as they arrive, since activation is asynchronous.
     func load() {
         connectivity.activate()
-        isWatchPaired = connectivity.isWatchAppAvailable
         if let existing = store.load() {
-            state = .connected(space: existing.spaceName, sentToWatch: connectivity.hasDeliveredCredentials)
+            state = .connected(space: existing.spaceName)
+            // Re-offer the handoff in case a previous attempt predated activation.
+            connectivity.send(existing)
         }
     }
 
@@ -42,8 +44,8 @@ final class SetupModel {
             credentials.spaceName = try? await verifiedSpaceName(for: credentials)
 
             try store.save(credentials)
-            let delivered = connectivity.send(credentials)
-            state = .connected(space: credentials.spaceName, sentToWatch: delivered)
+            connectivity.send(credentials)
+            state = .connected(space: credentials.spaceName)
         } catch is CancellationError {
             state = .idle
         } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
@@ -55,8 +57,8 @@ final class SetupModel {
 
     func resend() {
         guard let credentials = store.load() else { return }
-        let delivered = connectivity.send(credentials)
-        state = .connected(space: credentials.spaceName, sentToWatch: delivered)
+        connectivity.send(credentials)
+        state = .connected(space: credentials.spaceName)
     }
 
     func reset() {

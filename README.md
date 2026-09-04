@@ -110,6 +110,8 @@ Verified:
 - OAuth chain confirmed live against `mcp.craft.do`: resource metadata → authorization
   server metadata → dynamic client registration returns a usable public `client_id`.
 - Watch app launches and renders in the simulator, unconnected and connected.
+- Phone app launches clean: `WCSession` activation completes and the watch-availability
+  hint appears from the activation callback, confirming the async path works.
 
 Not yet exercised end to end, because it needs a real Craft sign-in and paired hardware:
 
@@ -117,6 +119,26 @@ Not yet exercised end to end, because it needs a real Craft sign-in and paired h
 - Phone → Watch credential handoff.
 - Refresh-token rotation on the Watch.
 - Capture and completion against a live space from the Watch.
+
+### Expected console noise
+
+Running the iOS app on a simulator with no paired Watch logs these from `com.apple.wcd`
+(the WatchConnectivity daemon, not this app) — they are inherent to having no counterpart
+and clear once a Watch is paired:
+
+```
+WCSession is not paired
+WCSession counterpart app not installed
+dropping as pairingIDs no longer match
+Application context data is nil
+```
+
+`WCSession has not been activated` is *not* in that category. If it reappears, something
+is reading `isPaired` / `isWatchAppInstalled` / `applicationContext` before activation
+completes — see the comment at the top of `PhoneConnectivity`.
+
+To pair simulators, run the **CraftWatch Watch App** scheme once, or pair them under
+Xcode ▸ Window ▸ Devices and Simulators ▸ Simulators.
 
 Not built yet: an app icon, MCP-backed natural-language commands ("add a follow-up with
 Ryan tomorrow"), and background refresh to keep the complication warm without opening
