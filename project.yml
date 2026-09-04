@@ -88,6 +88,10 @@ targets:
     dependencies:
       - target: CraftWatchWidget
         embed: true
+      # Explicit link, not just `import AppIntents`: the App Intents metadata
+      # processor skips extraction unless the framework is a declared dependency,
+      # which leaves the intents invisible to Shortcuts and the Action button.
+      - sdk: AppIntents.framework
 
   CraftWatchWidget:
     type: app-extension

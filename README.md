@@ -73,6 +73,35 @@ Deliberate choices worth knowing about:
 - **Tool names are resolved from `tools/list`**, so a rename on Craft's side surfaces a
   clear error instead of a silent 404.
 
+## Action button
+
+Apple reserves *direct* Action button registration for workout and dive apps —
+`StartWorkoutIntent` and `StartDiveIntent` are the only hooks, so a capture app cannot
+appear under Settings ▸ Action Button ▸ App. It gets there through the built-in
+**Action ▸ Shortcut** option instead, which runs any App Intent this app exposes.
+
+Three intents live in `Watch/CraftIntents.swift` (in the app target, not an extension —
+Apple's guidance for Action button intents):
+
+| Intent | Opens the app | Use |
+|---|---|---|
+| `CaptureToCraftIntent` | yes | one press → dictation. Assign this to the Action button. |
+| `AddCraftTaskIntent(text:)` | no | compose with Shortcuts' *Dictate Text* to save without the app coming forward |
+| `AddCraftNoteIntent(text:)` | no | same, into today's Daily Note |
+
+`CraftShortcuts: AppShortcutsProvider` publishes the parameterless one to Siri and
+Shortcuts. The two text intents are deliberately left out of it: they take a required
+parameter, so they belong in a composed shortcut rather than a bare phrase.
+
+`AppIntents.framework` is linked explicitly in `project.yml`. This is not optional —
+`import AppIntents` alone leaves the metadata processor reporting *"Metadata extraction
+skipped. No AppIntents.framework dependency found"*, the bundle ships with no
+`Metadata.appintents`, and every intent is invisible to Shortcuts. Verify a build with:
+
+```bash
+find <built>.app -iname "*appintents*"
+```
+
 ## Build and run
 
 ```bash

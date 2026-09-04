@@ -33,7 +33,15 @@ struct RootView: View {
         }
         .onOpenURL { url in
             // Tapping the complication should land straight in dictation.
-            if url.host == "capture" || url.path == "/capture" { showCapture = true }
+            if url.host == "capture" || url.path == "/capture" { store.requestCapture() }
+        }
+        // The Action button runs CaptureToCraftIntent, which only sets this — presenting
+        // the sheet is the view's job.
+        .onChange(of: store.captureRequestID) { _, id in
+            if id != nil { showCapture = true }
+        }
+        .onChange(of: showCapture) { _, isShowing in
+            if !isShowing { store.clearCaptureRequest() }
         }
     }
 

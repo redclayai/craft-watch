@@ -23,6 +23,11 @@ final class CraftStore {
     private(set) var lastRefresh: Date?
     var status: Status = .idle
 
+    /// Set by `CaptureToCraftIntent` (Action button) and the complication; the root
+    /// view watches it and presents dictation. A fresh id each time so two presses in a
+    /// row both register.
+    private(set) var captureRequestID: UUID?
+
     var destination: CraftAPI.Destination {
         didSet { UserDefaults.standard.set(destination.rawValue, forKey: Self.destinationKey) }
     }
@@ -36,6 +41,14 @@ final class CraftStore {
     private init() {
         let stored = UserDefaults.standard.string(forKey: Self.destinationKey)
         destination = stored.flatMap(CraftAPI.Destination.init(rawValue:)) ?? .task
+    }
+
+    func requestCapture() {
+        captureRequestID = UUID()
+    }
+
+    func clearCaptureRequest() {
+        captureRequestID = nil
     }
 
     // MARK: - Lifecycle
@@ -77,6 +90,14 @@ final class CraftStore {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
+    /// Minimal state load for an App Intent running without the UI: enough to know
+    /// whether there is a connection, without the cost of a full refresh.
+    func prepare() async {
+        isConnected = await client.isConnected
+        spaceName = await client.spaceName
+        pendingCount = await queue.count
+    }
+
     // MARK: - Reads
 
     func refresh() async {
@@ -100,12 +121,12 @@ final class CraftStore {
 
     /// Captures dictated text. Anything that cannot be sent right now is queued, so the
     /// user always gets a confirmation rather than losing what they said.
-    func capture(_ raw: String) async {
+    func capture(_ raw: String, to explicitTarget: CraftAPI.Destination? = nil) async {
         let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
 
         status = .working
-        let target = destination
+        let target = explicitTarget ?? destination
 
         do {
             try await api.capture(text, to: target)
