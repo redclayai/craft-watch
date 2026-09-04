@@ -12,6 +12,11 @@ let side = 1024
 let out = CommandLine.arguments.count > 1
     ? CommandLine.arguments[1]
     : "Watch/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
+let platform = CommandLine.arguments.count > 2 ? CommandLine.arguments[2] : "watchos"
+
+// watchOS crops the icon to a circle, so its glyph is drawn smaller to survive the
+// crop. iOS uses a rounded rectangle and has room for more.
+let glyphScale: CGFloat = platform == "ios" ? 1.12 : 1.0
 
 guard let space = CGColorSpace(name: CGColorSpace.sRGB),
       let ctx = CGContext(
@@ -36,6 +41,10 @@ ctx.drawLinearGradient(gradient, start: CGPoint(x: 0, y: w), end: CGPoint(x: 0, 
 
 ctx.setFillColor(.white)
 ctx.setStrokeColor(.white)
+
+ctx.translateBy(x: cx, y: w / 2)
+ctx.scaleBy(x: glyphScale, y: glyphScale)
+ctx.translateBy(x: -cx, y: -w / 2)
 
 // Mic glyph, laid out so the cradle ends meet the capsule at its lower half and the
 // stem lands inside the cradle's stroke — otherwise the arc reads as ears and the stem

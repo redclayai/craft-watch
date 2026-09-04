@@ -8,7 +8,15 @@ struct CraftWatchPhoneApp: App {
         WindowGroup {
             SetupView()
                 .environment(model)
-                .task { model.load() }
+                .task {
+#if DEBUG
+                    if ProcessInfo.processInfo.environment["CRAFT_DEMO"] == "1" {
+                        model.seedDemo()
+                        return
+                    }
+#endif
+                    model.load()
+                }
         }
     }
 }

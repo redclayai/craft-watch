@@ -104,6 +104,10 @@ every screenshot. Use simctl instead:
 Scripts/shot.sh [output-dir]     # screenshots every booted simulator
 ```
 
+`CRAFT_DEMO=1` also works on the iOS app (`SetupModel.seedDemo()`), rendering the
+connected setup screen without signing in — which is how the stretched-row bug in the
+Connected section was found and fixed.
+
 ### Inspecting the UI without a Craft account
 
 ```bash
@@ -127,7 +131,9 @@ Verified:
 - Watch app launches and renders in the simulator, unconnected and connected.
 - The Watch app carries an icon (`CFBundleIconName` and an `AppIcon` entry in
   `Assets.car`), without which watchOS refuses to install on real hardware.
-  Regenerate it with `swift Scripts/make-icon.swift`.
+  Both apps carry one. Regenerate with
+  `swift Scripts/make-icon.swift <out.png> ios|watchos` — the watchOS glyph is drawn
+  smaller so it survives the circular crop.
 - WatchConnectivity works end to end against a paired simulator pair: activation
   completes, the counterpart resolves to the paired Watch, and the phone correctly
   reports the Watch app as available. Zero `has not been activated`, zero

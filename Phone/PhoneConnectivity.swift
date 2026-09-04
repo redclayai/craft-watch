@@ -99,6 +99,17 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
         attemptDelivery()
     }
 
+#if DEBUG
+    /// Forces the published handoff state so the setup screen can be inspected in the
+    /// simulator without a real Craft grant. Never reachable in a release build.
+    func seedDemo(activated: Bool, watchAppAvailable: Bool, delivered: Bool) {
+        isActivated = activated
+        isWatchAppAvailable = watchAppAvailable
+        hasDeliveredCredentials = delivered
+        pendingCredentials = nil
+    }
+#endif
+
     // MARK: - WCSessionDelegate
 
     nonisolated func session(

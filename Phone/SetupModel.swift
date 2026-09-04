@@ -68,6 +68,14 @@ final class SetupModel {
         state = .idle
     }
 
+#if DEBUG
+    /// Renders the connected state without signing in. Enabled with CRAFT_DEMO=1.
+    func seedDemo() {
+        connectivity.seedDemo(activated: true, watchAppAvailable: false, delivered: false)
+        state = .connected(space: "Danny\u{2019}s Space")
+    }
+#endif
+
     // MARK: - Helpers
 
     private func verifiedSpaceName(for credentials: CraftCredentials) async throws -> String? {

@@ -21,70 +21,76 @@ struct SetupView: View {
                     .padding(.vertical, 4)
                 }
 
-                switch model.state {
-                case .idle:
-                    connectSection(title: "Connect Craft")
-
-                case .connecting:
-                    Section {
-                        HStack(spacing: 10) {
-                            ProgressView()
-                            Text("Waiting for Craft…")
-                        }
-                    }
-
-                case let .connected(space):
-                    Section("Connected") {
-                        LabeledContent("Space", value: space ?? "Craft")
-                        LabeledContent("Watch") {
-                            Label(handoff.label, systemImage: handoff.symbol)
-                                .foregroundStyle(handoff.tint)
-                        }
-                        Button("Send to Watch again") { model.resend() }
-                            .disabled(!connectivity.isActivated)
-                    }
-                    Section {
-                        Text(handoff.detail)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                    Section {
-                        Button("Disconnect", role: .destructive) { model.reset() }
-                    }
-
-                case let .failed(message):
-                    Section {
-                        Label(message, systemImage: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
-                            .font(.footnote)
-                    }
-                    connectSection(title: "Try again")
-                }
-
-                if showsMissingWatchHint {
-                    Section {
-                        Label(
-                            "No Apple Watch with Craft Watch installed was found. You can still sign in — the credentials are held and sent as soon as the Watch app appears.",
-                            systemImage: "applewatch.slash"
-                        )
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    }
-                }
+                StateSections(handoff: handoff)
             }
             .navigationTitle("Craft Watch")
         }
     }
 
-    /// Only worth saying once activation has actually answered, and only before the
-    /// connected state starts reporting handoff status itself.
-    private var showsMissingWatchHint: Bool {
-        guard connectivity.isSupported, connectivity.isActivated, !connectivity.isWatchAppAvailable else {
-            return false
-        }
+    private var handoff: HandoffStatus {
+        HandoffStatus.current(for: connectivity)
+    }
+}
+
+// MARK: - State sections
+
+private struct StateSections: View {
+    @Environment(SetupModel.self) private var model
+    let handoff: HandoffStatus
+
+    var body: some View {
         switch model.state {
-        case .idle, .failed: return true
-        case .connecting, .connected: return false
+        case .idle:
+            Group {
+                connectSection(title: "Connect Craft")
+                missingWatchHint
+            }
+
+        case .connecting:
+            Section {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("Waiting for Craft…")
+                }
+            }
+
+        case let .connected(space):
+            Group {
+                Section("Connected") {
+                    LabeledContent("Space", value: space ?? "Craft")
+                    // A plain HStack rather than LabeledContent with custom content:
+                    // the latter stretches its row to fill the section inside a Form.
+                    HStack(spacing: 6) {
+                        Text("Watch")
+                        Spacer(minLength: 12)
+                        Image(systemName: handoff.symbol)
+                            .foregroundStyle(handoff.tint)
+                        Text(handoff.label)
+                            .multilineTextAlignment(.trailing)
+                            .foregroundStyle(handoff.tint)
+                    }
+                    Button("Send to Watch again") { model.resend() }
+                }
+                Section {
+                    Text(handoff.detail)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                Section {
+                    Button("Disconnect", role: .destructive) { model.reset() }
+                }
+            }
+
+        case let .failed(message):
+            Group {
+                Section {
+                    Label(message, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .font(.footnote)
+                }
+                connectSection(title: "Try again")
+                missingWatchHint
+            }
         }
     }
 
@@ -98,18 +104,33 @@ struct SetupView: View {
         }
     }
 
-    // MARK: - Handoff status
-
-    private struct Handoff {
-        let label: String
-        let symbol: String
-        let tint: Color
-        let detail: String
+    @ViewBuilder
+    private var missingWatchHint: some View {
+        if handoff.isWatchMissing {
+            Section {
+                Label(
+                    "No Apple Watch with Craft Watch installed was found. You can still sign in — the credentials are held and sent as soon as the Watch app appears.",
+                    systemImage: "applewatch.slash"
+                )
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            }
+        }
     }
+}
 
-    private var handoff: Handoff {
+// MARK: - Handoff status
+
+struct HandoffStatus {
+    let label: String
+    let symbol: String
+    let tint: Color
+    let detail: String
+    var isWatchMissing = false
+
+    static func current(for connectivity: PhoneConnectivity) -> HandoffStatus {
         if !connectivity.isSupported {
-            return Handoff(
+            return HandoffStatus(
                 label: "Not available",
                 symbol: "applewatch.slash",
                 tint: .secondary,
@@ -117,7 +138,7 @@ struct SetupView: View {
             )
         }
         if !connectivity.isActivated {
-            return Handoff(
+            return HandoffStatus(
                 label: "Connecting…",
                 symbol: "ellipsis.circle",
                 tint: .secondary,
@@ -125,15 +146,16 @@ struct SetupView: View {
             )
         }
         if !connectivity.isWatchAppAvailable {
-            return Handoff(
+            return HandoffStatus(
                 label: "Watch app not installed",
                 symbol: "applewatch.slash",
                 tint: .orange,
-                detail: "Install Craft Watch on your Apple Watch. Your credentials are saved and will be sent as soon as it appears."
+                detail: "Install Craft Watch on your Apple Watch. Your credentials are saved and will be sent as soon as it appears.",
+                isWatchMissing: true
             )
         }
         if connectivity.hasDeliveredCredentials {
-            return Handoff(
+            return HandoffStatus(
                 label: "Confirmed by Watch",
                 symbol: "checkmark.circle.fill",
                 tint: .green,
@@ -141,14 +163,14 @@ struct SetupView: View {
             )
         }
         if connectivity.isAwaitingWatch {
-            return Handoff(
+            return HandoffStatus(
                 label: "Waiting for Watch",
                 symbol: "clock",
                 tint: .orange,
                 detail: "Sent, but the Watch has not confirmed yet. Open Craft on your Apple Watch."
             )
         }
-        return Handoff(
+        return HandoffStatus(
             label: "Not sent yet",
             symbol: "exclamationmark.circle",
             tint: .orange,
