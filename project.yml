@@ -33,7 +33,9 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ai.redclay.craftwatch
         PRODUCT_NAME: Craft Watch
-        TARGETED_DEVICE_FAMILY: "1,2"
+        # iPhone only: an iPad cannot pair with an Apple Watch, and declaring iPad
+        # support would require all four orientations for multitasking.
+        TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_ENTITLEMENTS: Phone/CraftWatch.entitlements
     info:
       path: Phone/Info.plist
