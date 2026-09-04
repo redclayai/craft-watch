@@ -59,7 +59,11 @@ Deliberate choices worth knowing about:
   space name, then hands the credentials over and stops. Only one device rotates the
   refresh token, so the two can't invalidate each other.
 - **Credentials arrive via `updateApplicationContext`**, which is durable — if the Watch
-  is asleep or out of range during setup, WatchConnectivity delivers it later.
+  is asleep or out of range during setup, WatchConnectivity delivers it later. Delivery is
+  only attempted once `isWatchAppInstalled`, and the phone reports success only after the
+  Watch sends back an explicit ack: `updateApplicationContext` signals
+  `WCErrorCodeWatchAppNotInstalled` *asynchronously in a completion block without
+  throwing*, so a non-throwing call is not evidence of delivery.
 - **Capture never fails.** Anything that can't be sent goes to `PendingQueue` on disk and
   is retried on next launch or connect. The haptic distinguishes saved from queued.
 - **Completion is optimistic.** The row leaves immediately and is restored if Craft

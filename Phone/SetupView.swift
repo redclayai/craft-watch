@@ -134,10 +134,18 @@ struct SetupView: View {
         }
         if connectivity.hasDeliveredCredentials {
             return Handoff(
-                label: "Credentials sent",
+                label: "Confirmed by Watch",
                 symbol: "checkmark.circle.fill",
                 tint: .green,
-                detail: "Open Craft on your Apple Watch to finish. If it still says “Connect Craft” after a minute, tap Send to Watch again."
+                detail: "The Watch has the connection and works on its own from here."
+            )
+        }
+        if connectivity.isAwaitingWatch {
+            return Handoff(
+                label: "Waiting for Watch",
+                symbol: "clock",
+                tint: .orange,
+                detail: "Sent, but the Watch has not confirmed yet. Open Craft on your Apple Watch."
             )
         }
         return Handoff(

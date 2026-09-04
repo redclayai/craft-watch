@@ -3,27 +3,39 @@ import WatchConnectivity
 
 /// Hands credentials to the Watch.
 ///
-/// `WCSession.activate()` completes asynchronously, and every interesting property —
-/// `isPaired`, `isWatchAppInstalled`, `applicationContext`, `updateApplicationContext` —
-/// is invalid until it has. So nothing is read eagerly: state is published from the
-/// activation callback and from `sessionWatchStateDidChange`, and a handoff issued before
-/// activation is held and delivered once the session is up.
+/// Two things about WatchConnectivity shape this class:
 ///
-/// Application context is the transport because it is durable: if the Watch is asleep or
-/// out of range, WatchConnectivity delivers it later without the phone retrying.
+/// 1. `activate()` completes asynchronously, and `isPaired`, `isWatchAppInstalled`,
+///    `applicationContext` and `updateApplicationContext` are all invalid until it has.
+///    So nothing is read eagerly; state is published from the activation callback and
+///    from `sessionWatchStateDidChange`.
+/// 2. `updateApplicationContext` reports `WCErrorCodeWatchAppNotInstalled`
+///    *asynchronously*, inside a completion block, without throwing. Treating a
+///    non-throwing call as delivery therefore reports success for credentials the Watch
+///    never received.
+///
+/// So credentials are held until the Watch explicitly acknowledges them, and delivery is
+/// only attempted once the Watch app actually exists. Application context is the
+/// transport because it is durable: once set, WatchConnectivity delivers it whenever the
+/// Watch next becomes available.
 @Observable
 final class PhoneConnectivity: NSObject, WCSessionDelegate {
     static let shared = PhoneConnectivity()
 
     private(set) var isActivated = false
     private(set) var isWatchAppAvailable = false
+
+    /// True only once the Watch has confirmed receipt.
     private(set) var hasDeliveredCredentials = false
 
-    private var queuedCredentials: CraftCredentials?
+    private var pendingCredentials: CraftCredentials?
 
     private override init() { super.init() }
 
     var isSupported: Bool { WCSession.isSupported() }
+
+    /// Credentials are saved and waiting for a Watch that cannot take them yet.
+    var isAwaitingWatch: Bool { pendingCredentials != nil && !hasDeliveredCredentials }
 
     func activate() {
         guard WCSession.isSupported() else { return }
@@ -32,20 +44,18 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
         session.activate()
     }
 
-    /// Returns whether the handoff went out now. `false` means it was held until the
-    /// session activates, not that it failed.
+    /// Returns whether the handoff went out now. `false` means it is held until the Watch
+    /// app appears, not that it failed.
     @discardableResult
     func send(_ credentials: CraftCredentials) -> Bool {
         guard WCSession.isSupported() else { return false }
-        guard isActivated else {
-            queuedCredentials = credentials
-            return false
-        }
-        return deliver(credentials)
+        pendingCredentials = credentials
+        hasDeliveredCredentials = false
+        return attemptDelivery()
     }
 
     func clear() {
-        queuedCredentials = nil
+        pendingCredentials = nil
         hasDeliveredCredentials = false
         guard WCSession.isSupported(), isActivated else { return }
         try? WCSession.default.updateApplicationContext([:])
@@ -53,19 +63,23 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
 
     // MARK: - Delivery
 
-    private func deliver(_ credentials: CraftCredentials) -> Bool {
-        guard let data = try? JSONEncoder().encode(credentials) else { return false }
+    @discardableResult
+    private func attemptDelivery() -> Bool {
+        guard let credentials = pendingCredentials, isActivated else { return false }
+
         let session = WCSession.default
+        // Gate on the counterpart existing. Without this the call succeeds and then fails
+        // in a block we never see.
+        guard session.isPaired, session.isWatchAppInstalled else { return false }
+        guard let data = try? JSONEncoder().encode(credentials) else { return false }
+
         do {
             try session.updateApplicationContext([
                 "credentials": data,
                 "updatedAt": Date().timeIntervalSince1970,
             ])
-            hasDeliveredCredentials = true
-            // Also nudge it as user info so a running Watch app picks it up immediately.
-            if session.isWatchAppInstalled {
-                session.transferUserInfo(["credentials": data])
-            }
+            // Nudge a running Watch app so it does not wait for the next context delivery.
+            session.transferUserInfo(["credentials": data])
             return true
         } catch {
             return false
@@ -80,12 +94,9 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
             return
         }
         isWatchAppAvailable = session.isPaired && session.isWatchAppInstalled
-        if session.applicationContext["credentials"] != nil {
-            hasDeliveredCredentials = true
-        }
-        if let queued = queuedCredentials, deliver(queued) {
-            queuedCredentials = nil
-        }
+        // Installing the Watch app changes watch state, which lands here — the natural
+        // point to deliver a handoff that had nowhere to go.
+        attemptDelivery()
     }
 
     // MARK: - WCSessionDelegate
@@ -102,10 +113,17 @@ final class PhoneConnectivity: NSObject, WCSessionDelegate {
         Task { @MainActor in self.refreshState() }
     }
 
+    nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
+        guard userInfo["credentialsAck"] != nil else { return }
+        Task { @MainActor in
+            self.hasDeliveredCredentials = true
+            self.pendingCredentials = nil
+        }
+    }
+
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
 
     nonisolated func sessionDidDeactivate(_ session: WCSession) {
-        // Reactivate so a switch to a different paired Watch keeps working.
         WCSession.default.activate()
         Task { @MainActor in self.refreshState() }
     }

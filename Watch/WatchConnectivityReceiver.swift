@@ -24,8 +24,20 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
         else { return }
 
         Task { @MainActor in
-            await CraftStore.shared.adopt(credentials)
+            let store = CraftStore.shared
+            await store.adopt(credentials)
+            // The phone cannot tell whether application context actually landed, so
+            // confirm explicitly. Without this it reports "sent" on faith.
+            if store.isConnected { Self.acknowledge() }
         }
+    }
+
+    /// Tells the phone the credentials arrived and were stored.
+    nonisolated private static func acknowledge() {
+        guard WCSession.isSupported() else { return }
+        let session = WCSession.default
+        guard session.activationState == .activated else { return }
+        session.transferUserInfo(["credentialsAck": true])
     }
 
     // MARK: - WCSessionDelegate
