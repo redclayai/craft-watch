@@ -103,3 +103,28 @@ targets:
         CFBundleDisplayName: Craft Tasks
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+
+schemes:
+
+  CraftWatch:
+    build:
+      targets:
+        CraftWatch: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+
+  CraftWatch Watch App:
+    build:
+      targets:
+        CraftWatch Watch App: all
+    run:
+      config: Debug
+      environmentVariables:
+        # Tick this in Xcode to render the connected UI without a real Craft grant.
+        - variable: CRAFT_DEMO
+          value: "1"
+          isEnabled: false
+    archive:
+      config: Release

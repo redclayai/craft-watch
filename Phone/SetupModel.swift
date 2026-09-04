@@ -20,7 +20,8 @@ final class SetupModel {
     private let oauth = CraftOAuth()
     private let store = CredentialStore.shared
     private let connectivity = PhoneConnectivity.shared
-    private var presenter = AuthPresentationAnchor()
+    private var presenter: AuthPresentationAnchor?
+    private var authSession: ASWebAuthenticationSession?
 
     /// Kicks off session activation. Watch availability and delivery status are read from
     /// `PhoneConnectivity` by the view as they arrive, since activation is asynchronous.
@@ -79,7 +80,19 @@ final class SetupModel {
     }
 
     private func authorize(url: URL) async throws -> URL {
-        let anchor = presenter
+        guard let anchor = AuthPresentationAnchor.resolveAnchor() else {
+            throw CraftError.oauth("No window is available to present sign-in")
+        }
+        // Both are held for the life of the flow: the session keeps its context provider
+        // weakly, and dropping either mid-sign-in silently cancels it.
+        let provider = AuthPresentationAnchor(anchor: anchor)
+        presenter = provider
+
+        defer {
+            authSession = nil
+            presenter = nil
+        }
+
         return try await withCheckedThrowingContinuation { continuation in
             let session = ASWebAuthenticationSession(
                 url: url,
@@ -91,17 +104,33 @@ final class SetupModel {
                     continuation.resume(throwing: error ?? CraftError.oauth("Sign-in was dismissed"))
                 }
             }
-            session.presentationContextProvider = anchor
+            session.presentationContextProvider = provider
             session.prefersEphemeralWebBrowserSession = false
+            authSession = session
             session.start()
         }
     }
 }
 
 private final class AuthPresentationAnchor: NSObject, ASWebAuthenticationPresentationContextProviding {
+    private let anchor: ASPresentationAnchor
+
+    init(anchor: ASPresentationAnchor) {
+        self.anchor = anchor
+        super.init()
+    }
+
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        UIApplication.shared.connectedScenes
-            .compactMap { ($0 as? UIWindowScene)?.keyWindow }
-            .first ?? ASPresentationAnchor()
+        anchor
+    }
+
+    /// Resolved before the session starts so there is no need for a fallback window,
+    /// which would mean calling one of UIWindow's deprecated initialisers.
+    static func resolveAnchor() -> ASPresentationAnchor? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        if let key = scenes.compactMap(\.keyWindow).first { return key }
+        if let existing = scenes.flatMap(\.windows).first { return existing }
+        if let scene = scenes.first { return UIWindow(windowScene: scene) }
+        return nil
     }
 }

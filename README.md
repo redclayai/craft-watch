@@ -121,13 +121,15 @@ Verified:
 - OAuth chain confirmed live against `mcp.craft.do`: resource metadata → authorization
   server metadata → dynamic client registration returns a usable public `client_id`.
 - Watch app launches and renders in the simulator, unconnected and connected.
-- Phone app launches clean: `WCSession` activation completes and the watch-availability
-  hint appears from the activation callback, confirming the async path works.
+- WatchConnectivity works end to end against a paired simulator pair: activation
+  completes, the counterpart resolves to the paired Watch, and the phone correctly
+  reports the Watch app as available. Zero `has not been activated`, zero
+  `counterpart app not installed`, zero `pairingIDs no longer match`.
 
-Not yet exercised end to end, because it needs a real Craft sign-in and paired hardware:
+Not yet exercised, because it needs a real Craft sign-in:
 
 - The OAuth round trip through `ASWebAuthenticationSession`.
-- Phone → Watch credential handoff.
+- Phone → Watch credential handoff (the transport is verified; the payload is not).
 - Refresh-token rotation on the Watch.
 - Capture and completion against a live space from the Watch.
 
