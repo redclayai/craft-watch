@@ -1,0 +1,105 @@
+name: CraftWatch
+
+options:
+  bundleIdPrefix: ai.redclay
+  deploymentTarget:
+    iOS: "26.0"
+    watchOS: "26.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: 3RPG92BQ9C
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    GENERATE_INFOPLIST_FILE: NO
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+
+targets:
+
+  CraftWatch:
+    type: application
+    platform: iOS
+    sources:
+      - path: Shared
+      - path: Phone
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.redclay.craftwatch
+        PRODUCT_NAME: Craft Watch
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_ENTITLEMENTS: Phone/CraftWatch.entitlements
+    info:
+      path: Phone/Info.plist
+      properties:
+        CFBundleDisplayName: Craft Watch
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        CFBundleURLTypes:
+          - CFBundleURLName: ai.redclay.craftwatch.oauth
+            CFBundleURLSchemes: [craftwatch]
+        ITSAppUsesNonExemptEncryption: false
+    dependencies:
+      - target: CraftWatch Watch App
+        embed: true
+        copy:
+          destination: productsDirectory
+          subpath: "$(CONTENTS_FOLDER_PATH)/Watch"
+
+  CraftWatch Watch App:
+    type: application
+    platform: watchOS
+    sources:
+      - path: Shared
+      - path: Watch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.redclay.craftwatch.watchkitapp
+        PRODUCT_NAME: Craft Watch
+        CODE_SIGN_ENTITLEMENTS: Watch/CraftWatch.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    info:
+      path: Watch/Info.plist
+      properties:
+        CFBundleDisplayName: Craft
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: ai.redclay.craftwatch
+        WKRunsIndependentlyOfCompanionApp: true
+        CFBundleURLTypes:
+          - CFBundleURLName: ai.redclay.craftwatch.watch
+            CFBundleURLSchemes: [craftwatch]
+        NSMicrophoneUsageDescription: Dictation is used to capture notes and tasks for Craft.
+        NSSpeechRecognitionUsageDescription: Speech recognition turns your dictation into a Craft task or note.
+        ITSAppUsesNonExemptEncryption: false
+    dependencies:
+      - target: CraftWatchWidget
+        embed: true
+
+  CraftWatchWidget:
+    type: app-extension
+    platform: watchOS
+    sources:
+      - path: WatchWidget
+      - path: Shared/SharedDefaults.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.redclay.craftwatch.watchkitapp.widget
+        PRODUCT_NAME: CraftWatchWidget
+        CODE_SIGN_ENTITLEMENTS: WatchWidget/CraftWatchWidget.entitlements
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    info:
+      path: WatchWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Craft Tasks
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
