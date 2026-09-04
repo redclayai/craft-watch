@@ -121,6 +121,9 @@ Verified:
 - OAuth chain confirmed live against `mcp.craft.do`: resource metadata → authorization
   server metadata → dynamic client registration returns a usable public `client_id`.
 - Watch app launches and renders in the simulator, unconnected and connected.
+- The Watch app carries an icon (`CFBundleIconName` and an `AppIcon` entry in
+  `Assets.car`), without which watchOS refuses to install on real hardware.
+  Regenerate it with `swift Scripts/make-icon.swift`.
 - WatchConnectivity works end to end against a paired simulator pair: activation
   completes, the counterpart resolves to the paired Watch, and the phone correctly
   reports the Watch app as available. Zero `has not been activated`, zero
@@ -153,6 +156,6 @@ completes — see the comment at the top of `PhoneConnectivity`.
 To pair simulators, run the **CraftWatch Watch App** scheme once, or pair them under
 Xcode ▸ Window ▸ Devices and Simulators ▸ Simulators.
 
-Not built yet: an app icon, MCP-backed natural-language commands ("add a follow-up with
+Not built yet: MCP-backed natural-language commands ("add a follow-up with
 Ryan tomorrow"), and background refresh to keep the complication warm without opening
 the app.
