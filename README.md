@@ -89,6 +89,17 @@ shared by the Watch app and its widget. Signing is automatic against team `3RPG9
 2. Open **Craft** on the Watch. It picks up the credentials and lists today's tasks.
 3. Add the *Craft Tasks* complication to a watch face for one-tap dictation.
 
+### Seeing the UI
+
+The Claude Code live simulator panel does not work on this machine: its helper
+(`/Applications/Claude.app/Contents/Helpers/Claude iOS Sim.app`) aborts in
+CoreImage/Metal via FBSimulatorControl before it reaches the app, so it crash-loops on
+every screenshot. Use simctl instead:
+
+```bash
+Scripts/shot.sh [output-dir]     # screenshots every booted simulator
+```
+
 ### Inspecting the UI without a Craft account
 
 ```bash
