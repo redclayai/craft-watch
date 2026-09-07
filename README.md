@@ -36,6 +36,35 @@ blocks get --date today          # -> today's Daily Note page id
 blocks add --id <pageId> --markdown "…" --position end
 ```
 
+## Spoken due dates
+
+Say "set appointment for tomorrow at three o'clock" and you get a task titled
+*Set appointment — 3:00 PM* scheduled for tomorrow. `Shared/DatePhraseParser.swift` does
+this with `NSDataDetector`: on-device, no network, and it already understands spelled-out
+times, weekday names and relative days.
+
+**Craft tasks store only a date.** `taskInfo.scheduleDate` has no time component, and a
+time passed to `--schedule` is silently dropped (verified against a live space). So the
+day goes in `--schedule` and any spoken clock time is appended to the task text, which is
+the most that model allows.
+
+Two traps this parser is built around:
+
+- **A missing time resolves to 12:00**, which is indistinguishable from "noon". So
+  whether a time was spoken is decided from the matched *words* — clock digits, am/pm,
+  o'clock, noon, midnight, or a bare hour after "at" — never from the resolved value.
+- **Vague parts of the day are deliberately not times.** "Saturday afternoon" resolves to
+  15:00, but recording 3:00 PM would invent precision the speaker never gave, so those
+  words stay in the title instead.
+
+Where the detector cannot help, it degrades rather than guesses: "call the bank at 2"
+finds no day and schedules today with the words intact; "standup Monday at nine" schedules
+Monday and leaves "at nine" in the title. Nothing is lost and nothing is fabricated.
+
+The date is resolved **at capture time, not at send time** — a queued capture that said
+"tomorrow" and flushes next week still means the day it was spoken, which is why
+`PendingCapture` carries `scheduleDay`.
+
 ## Architecture
 
 ```

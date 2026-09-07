@@ -128,13 +128,28 @@ final class CraftStore {
         status = .working
         let target = explicitTarget ?? destination
 
+        // Resolve any spoken due date here, not at send time: a capture that says
+        // "tomorrow" and gets flushed from the queue next week must still mean the day
+        // the speaker meant.
+        var outgoing = text
+        var scheduleDay: String?
+        var confirmation = target == .task ? "Task saved" : "Added to Daily Note"
+
+        if target == .task, let phrase = DatePhraseParser.parse(text) {
+            outgoing = DatePhraseParser.taskText(for: phrase)
+            scheduleDay = DatePhraseParser.craftDay(for: phrase.date)
+            confirmation = "Saved for \(Self.dueLabel(for: phrase))"
+        }
+
         do {
-            try await api.capture(text, to: target)
+            try await api.capture(outgoing, to: target, scheduleDay: scheduleDay)
             WKInterfaceDevice.current().play(.success)
-            status = .saved(target == .task ? "Task saved" : "Added to Daily Note")
+            status = .saved(confirmation)
             await refresh()
         } catch {
-            await queue.enqueue(PendingCapture(text: text, destination: target))
+            await queue.enqueue(
+                PendingCapture(text: outgoing, destination: target, scheduleDay: scheduleDay)
+            )
             pendingCount = await queue.count
             WKInterfaceDevice.current().play(.notification)
             status = .saved("Queued — will send when connected")
@@ -215,6 +230,22 @@ final class CraftStore {
         ]
     }
 #endif
+
+    /// Short enough for a watch face: "tomorrow", "Fri", or either plus the time.
+    private static func dueLabel(for phrase: DatePhrase) -> String {
+        let calendar = Calendar.current
+        let day: String
+        if calendar.isDateInToday(phrase.date) {
+            day = "today"
+        } else if calendar.isDateInTomorrow(phrase.date) {
+            day = "tomorrow"
+        } else {
+            day = phrase.date.formatted(.dateTime.weekday(.abbreviated))
+        }
+
+        guard phrase.hasTime, !phrase.usedFallbackTitle else { return day }
+        return "\(day) \(DatePhraseParser.timeLabel(for: phrase.date))"
+    }
 
     private static func message(for error: Error) -> String {
         (error as? LocalizedError)?.errorDescription ?? error.localizedDescription

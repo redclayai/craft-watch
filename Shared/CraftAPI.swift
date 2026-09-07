@@ -43,10 +43,14 @@ nonisolated struct CraftAPI: Sendable {
 
     // MARK: - Writes
 
-    func addTask(_ text: String, scheduleToday: Bool = true) async throws {
-        var command = "tasks add --markdown \(Self.quote(text))"
-        if scheduleToday { command += " --schedule today" }
-        try await runWrite(command)
+    /// `scheduleDay` is `YYYY-MM-DD`; omitting it schedules today.
+    ///
+    /// Craft stores only a date — `taskInfo.scheduleDate` has no time component, and a
+    /// time passed here is silently dropped — so any spoken clock time is carried in the
+    /// task text instead.
+    func addTask(_ text: String, scheduleDay: String? = nil) async throws {
+        let day = scheduleDay ?? "today"
+        try await runWrite("tasks add --markdown \(Self.quote(text)) --schedule \(Self.quote(day))")
     }
 
     func complete(taskID: String) async throws {
@@ -61,9 +65,9 @@ nonisolated struct CraftAPI: Sendable {
         try await runWrite("blocks add --id \(Self.quote(pageID)) --markdown \(Self.quote(text)) --position end")
     }
 
-    func capture(_ text: String, to destination: Destination) async throws {
+    func capture(_ text: String, to destination: Destination, scheduleDay: String? = nil) async throws {
         switch destination {
-        case .task: try await addTask(text)
+        case .task: try await addTask(text, scheduleDay: scheduleDay)
         case .dailyNote: try await appendToDailyNote(text)
         }
     }

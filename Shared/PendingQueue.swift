@@ -4,6 +4,10 @@ nonisolated struct PendingCapture: Identifiable, Codable, Sendable, Hashable {
     var id: UUID = UUID()
     var text: String
     var destination: CraftAPI.Destination
+    /// Resolved at capture time, not at send time. A capture made today saying
+    /// "tomorrow" and flushed next week must still mean the day the speaker meant.
+    /// Optional so queues written by earlier builds still decode.
+    var scheduleDay: String?
     var createdAt: Date = Date()
     var attempts: Int = 0
 }
@@ -60,7 +64,7 @@ actor PendingQueue {
         var delivered = 0
         for item in items {
             do {
-                try await api.capture(item.text, to: item.destination)
+                try await api.capture(item.text, to: item.destination, scheduleDay: item.scheduleDay)
                 remove(item.id)
                 delivered += 1
             } catch {
