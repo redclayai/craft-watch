@@ -1,0 +1,13 @@
+// Signing configuration.
+//
+// This file is committed and intentionally sets nothing. The optional include below
+// picks up a local, gitignored file if you have one, so a fresh clone builds without
+// inheriting somebody else's Apple Developer team.
+//
+// To use your own team without touching tracked files, create Signing.local.xcconfig:
+//
+//     DEVELOPMENT_TEAM = ABCDE12345
+//
+// Or leave it out entirely and pick a team in Xcode's Signing & Capabilities.
+
+#include? "Signing.local.xcconfig"

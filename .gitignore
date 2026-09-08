@@ -5,3 +5,6 @@ DerivedData/
 *.xcworkspace
 !*.xcodeproj/project.xcworkspace
 xcuserdata/
+
+# Local signing overrides (see Signing.xcconfig)
+Signing.local.xcconfig
