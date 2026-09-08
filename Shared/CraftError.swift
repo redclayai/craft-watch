@@ -4,6 +4,10 @@ nonisolated enum CraftError: LocalizedError, Sendable {
     case notConnected
     case http(status: Int, body: String)
     case oauth(String)
+    /// The token endpoint answered `invalid_grant`: the refresh token is genuinely dead
+    /// and only a fresh sign-in will help. Distinguished from every other 4xx, which may
+    /// be transient and must not cost the user their saved credentials.
+    case grantExpired(String)
     case rpc(code: Int, message: String)
     case toolUnavailable(String)
     case malformedResponse(String)
@@ -18,6 +22,8 @@ nonisolated enum CraftError: LocalizedError, Sendable {
             "Craft returned HTTP \(status). \(body.prefix(200))"
         case let .oauth(detail):
             "Sign-in failed: \(detail)"
+        case .grantExpired:
+            "Craft signed this Watch out. Open Craft Watch on your iPhone and connect again."
         case let .rpc(code, message):
             "Craft error \(code): \(message)"
         case let .toolUnavailable(name):

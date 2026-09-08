@@ -67,6 +67,8 @@ final class CraftStore {
     func adopt(_ credentials: CraftCredentials) async {
         do {
             try await client.adopt(credentials)
+            SharedDefaults.lastSignOutReason = nil
+            CraftLog.handoff.log("Adopted credentials from phone")
             isConnected = true
             spaceName = credentials.spaceName
             status = .idle
@@ -113,7 +115,13 @@ final class CraftStore {
             publishToComplication()
         } catch {
             status = .failed(Self.message(for: error))
-            if case CraftError.notConnected = error { isConnected = false }
+            CraftLog.mcp.error("Refresh failed: \(Self.message(for: error), privacy: .public)")
+            switch error {
+            case CraftError.notConnected, CraftError.grantExpired:
+                isConnected = false
+            default:
+                break
+            }
         }
     }
 
@@ -143,10 +151,14 @@ final class CraftStore {
 
         do {
             try await api.capture(outgoing, to: target, scheduleDay: scheduleDay)
+            CraftLog.capture.log("Captured to \(target.rawValue, privacy: .public)")
             WKInterfaceDevice.current().play(.success)
             status = .saved(confirmation)
             await refresh()
         } catch {
+            CraftLog.capture.error(
+                "Capture failed, queueing: \(Self.message(for: error), privacy: .public)"
+            )
             await queue.enqueue(
                 PendingCapture(text: outgoing, destination: target, scheduleDay: scheduleDay)
             )

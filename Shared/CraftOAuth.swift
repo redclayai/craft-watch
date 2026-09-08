@@ -220,7 +220,32 @@ nonisolated struct CraftOAuth: Sendable {
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.httpBody = components.percentEncodedQuery?.data(using: .utf8)
-        return try await decode(request)
+
+        let (data, response) = try await session.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let body = String(decoding: data, as: UTF8.self)
+
+        guard (200 ..< 300).contains(status) else {
+            // RFC 6749 error codes. Only `invalid_grant` means the grant is dead; the
+            // rest can be transient, so they must not be treated as a sign-out.
+            struct Failure: Decodable { let error: String?; let error_description: String? }
+            let failure = try? JSONDecoder().decode(Failure.self, from: data)
+            let code = failure?.error ?? "http_\(status)"
+            let detail = failure?.error_description ?? body
+
+            CraftLog.oauth.error("Token endpoint \(status, privacy: .public) \(code, privacy: .public)")
+
+            if code == "invalid_grant" {
+                throw CraftError.grantExpired(detail)
+            }
+            throw CraftError.http(status: status, body: body)
+        }
+
+        do {
+            return try JSONDecoder().decode(TokenResponse.self, from: data)
+        } catch {
+            throw CraftError.malformedResponse(String(body.prefix(200)))
+        }
     }
 
     // MARK: - Plumbing

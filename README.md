@@ -93,6 +93,12 @@ Deliberate choices worth knowing about:
   Watch sends back an explicit ack: `updateApplicationContext` signals
   `WCErrorCodeWatchAppNotInstalled` *asynchronously in a completion block without
   throwing*, so a non-throwing call is not evidence of delivery.
+- **A failed token refresh does not sign you out.** Only an explicit `invalid_grant`
+  from the token endpoint clears the stored credentials; every other 4xx is treated as
+  recoverable and the refresh token is kept. Token endpoints answer 400 for plenty of
+  transient reasons, and an earlier version deleted the grant on any of them — which
+  silently returned the Watch to its first-run screen. When the app does sign itself out
+  it records why in `SharedDefaults.lastSignOutReason` and the connect prompt shows it.
 - **Capture never fails.** Anything that can't be sent goes to `PendingQueue` on disk and
   is retried on next launch or connect. The haptic distinguishes saved from queued.
 - **Completion is optimistic.** The row leaves immediately and is restored if Craft
@@ -130,6 +136,26 @@ skipped. No AppIntents.framework dependency found"*, the bundle ships with no
 ```bash
 find <built>.app -iname "*appintents*"
 ```
+
+## Logs
+
+The failure modes here are invisible on a wrist, so the OAuth, MCP, capture and handoff
+paths log through `CraftLog` under subsystem `ai.redclay.craftwatch`:
+
+```bash
+xcrun devicectl device process launch --device <udid> --console ai.redclay.craftwatch.watchkitapp
+```
+
+or Console.app filtered on that subsystem. Categories: `oauth`, `mcp`, `capture`,
+`handoff`.
+
+### Recovering a signed-out Watch
+
+The phone holds the refresh token it originally received, but the Watch **rotates** that
+token on every refresh, so the phone's copy goes stale as soon as the Watch uses it.
+*Send to Watch again* therefore only helps if the Watch never received the credentials in
+the first place. If the Watch has signed itself out, tap **Disconnect** and then
+**Connect Craft** on the iPhone to mint a fresh grant.
 
 ## Build and run
 

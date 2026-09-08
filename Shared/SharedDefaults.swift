@@ -9,6 +9,7 @@ nonisolated enum SharedDefaults {
         static let openTaskCount = "openTaskCount"
         static let updatedAt = "openTaskCountUpdatedAt"
         static let pendingCount = "pendingCaptureCount"
+        static let signOutReason = "lastSignOutReason"
     }
 
     private static var store: UserDefaults? { UserDefaults(suiteName: suiteName) }
@@ -28,6 +29,20 @@ nonisolated enum SharedDefaults {
 
     static var updatedAt: Date? {
         store?.object(forKey: Key.updatedAt) as? Date
+    }
+
+    /// Why the app last cleared its credentials. Shown on the connect prompt so a
+    /// silent sign-out is explainable rather than mysterious.
+    static var lastSignOutReason: String? {
+        get { store?.string(forKey: Key.signOutReason) }
+        set {
+            guard let store else { return }
+            if let newValue {
+                store.set(newValue, forKey: Key.signOutReason)
+            } else {
+                store.removeObject(forKey: Key.signOutReason)
+            }
+        }
     }
 
     static var pendingCount: Int {

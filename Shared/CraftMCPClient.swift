@@ -232,12 +232,19 @@ actor CraftMCPClient {
         do {
             refreshed = try await oauth.refresh(current)
         } catch let error as CraftError {
-            // A rejected refresh token means the grant is gone for good; anything else
-            // (offline, server hiccup) should stay retryable.
-            if case let .http(status, _) = error, status == 400 || status == 401 {
+            // Only an explicit `invalid_grant` justifies deleting the refresh token.
+            // Token endpoints answer 400 for plenty of recoverable reasons, and treating
+            // any of them as a sign-out loses the user's connection over a hiccup.
+            if case let .grantExpired(detail) = error {
+                CraftLog.oauth.error("Refresh token rejected as invalid_grant; signing out")
+                SharedDefaults.lastSignOutReason =
+                    "Craft rejected the saved sign-in. \(detail.prefix(120))"
                 disconnect()
-                throw CraftError.notConnected
+                throw error
             }
+            CraftLog.oauth.error(
+                "Token refresh failed, keeping credentials: \(error.localizedDescription, privacy: .public)"
+            )
             throw error
         }
         try? store.save(refreshed)
