@@ -22,8 +22,12 @@ than a real Craft space.
 
 ## How it talks to Craft
 
-Craft has no public REST API. Its only programmable surface is its MCP server, and that
-turns out to be a better fit than a REST API would have been:
+Craft has a public REST API, but it is scoped to **documents you pre-select**: you create
+an API connection, choose which documents it may touch, and get a URL for those. That
+cannot serve this app. Active tasks span the whole space, and the Daily Note is a
+different document every day, so there is no fixed document to point at.
+
+Craft's MCP server is space-wide, which is why it is the surface used here:
 
 | | |
 |---|---|
@@ -31,11 +35,12 @@ turns out to be a better fit than a REST API would have been:
 | Auth | OAuth 2.1 — PKCE S256, dynamic client registration, `token_endpoint_auth_method: none` |
 | Tools | exactly two: `craft_read` and `craft_write`, each taking one CLI-style `command` string |
 
-Two consequences shaped the design:
+Two properties of it shaped the design:
 
-1. **No client secret, and refresh tokens are issued.** The Watch can hold the refresh
-   token and mint its own access tokens forever, with no phone in the loop. This is what
-   makes locked-phone capture work.
+1. **No client secret, and refresh tokens are issued.** The Watch holds the refresh token
+   and mints its own access tokens, with no phone involved after the first sign-in. This
+   is what makes locked-phone capture work — though the Watch still needs its own network
+   path, so a Wi-Fi-only model away from known networks cannot reach Craft.
 2. **Two tools, one string argument each.** No MCP SDK is needed — `URLSession` plus
    `JSONSerialization` covers it in one file, which matters on watchOS.
 
