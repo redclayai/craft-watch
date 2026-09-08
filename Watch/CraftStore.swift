@@ -210,12 +210,13 @@ final class CraftStore {
     }
 
 #if DEBUG
-    /// Populates a plausible connected state so the main screen can be inspected in the
-    /// simulator without a real Craft grant. Enabled with the CRAFT_DEMO=1 environment
-    /// variable; never reachable in a release build.
+    /// Populates a connected state so the main screen can be inspected in the simulator
+    /// without a real Craft grant, and so README screenshots need no real account.
+    /// Enabled with the CRAFT_DEMO=1 environment variable; never reachable in a release
+    /// build. The content is deliberately generic — this ends up in screenshots.
     func seedDemo() {
         isConnected = true
-        spaceName = "Danny\u{2019}s Space"
+        spaceName = "My Space"
         lastRefresh = Date()
         status = .idle
         pendingCount = 0
@@ -223,27 +224,27 @@ final class CraftStore {
         tasks = [
             CraftTask(
                 id: "demo-1",
-                text: "Pull out ice machine to repair",
+                text: "Book the dentist",
                 isDone: false,
-                scheduled: day.addingTimeInterval(-6 * 86_400),
+                scheduled: day.addingTimeInterval(-2 * 86_400),
                 deadline: nil,
-                container: "Home To Do List"
+                container: "Errands"
             ),
             CraftTask(
                 id: "demo-2",
-                text: "Get started on the will and trust",
+                text: "Send the quarterly update",
                 isDone: false,
-                scheduled: day.addingTimeInterval(-4 * 86_400),
+                scheduled: day,
                 deadline: nil,
                 container: "inbox"
             ),
             CraftTask(
                 id: "demo-3",
-                text: "Review Millie release notes",
+                text: "Renew the parking permit",
                 isDone: false,
                 scheduled: day,
                 deadline: nil,
-                container: "Planning"
+                container: "Errands"
             ),
         ]
     }

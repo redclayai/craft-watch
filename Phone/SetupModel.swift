@@ -71,8 +71,8 @@ final class SetupModel {
 #if DEBUG
     /// Renders the connected state without signing in. Enabled with CRAFT_DEMO=1.
     func seedDemo() {
-        connectivity.seedDemo(activated: true, watchAppAvailable: false, delivered: false)
-        state = .connected(space: "Danny\u{2019}s Space")
+        connectivity.seedDemo(activated: true, watchAppAvailable: true, delivered: true)
+        state = .connected(space: "My Space")
     }
 #endif
 

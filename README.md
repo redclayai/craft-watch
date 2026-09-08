@@ -7,6 +7,19 @@ That last part is the whole reason this exists. The Craft Shortcut approach rout
 Craft's *iPhone* action, so the Watch is only a remote control and the request dies on a
 locked phone. This app talks to Craft directly from the Watch.
 
+## Screenshots
+
+| Watch — capture | Watch — first run |
+|:---:|:---:|
+| <img src="docs/screenshots/watch-capture.png" width="240" alt="Craft Watch main screen: a large Speak button, the task/daily-note toggle, and today's tasks below"> | <img src="docs/screenshots/watch-connect.png" width="240" alt="Craft Watch before setup, prompting to connect from the iPhone"> |
+
+| iPhone — connected | iPhone — first run |
+|:---:|:---:|
+| <img src="docs/screenshots/iphone-connected.png" width="260" alt="iPhone companion showing the connected Craft space and that the Watch has confirmed the handoff"> | <img src="docs/screenshots/iphone-connect.png" width="260" alt="iPhone companion before sign-in, with a Connect Craft button"> |
+
+Captured from the simulator with `CRAFT_DEMO=1`, so the content is placeholder rather
+than a real Craft space.
+
 ## How it talks to Craft
 
 Craft has no public REST API. Its only programmable surface is its MCP server, and that
