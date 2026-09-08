@@ -189,6 +189,9 @@ cd ~/CraftWatch && xcodegen generate && open CraftWatch.xcodeproj
 `project.xcodeproj` is generated and gitignored — edit `project.yml`, never the project
 file. Requires XcodeGen (`brew install xcodegen`).
 
+`project.yml` pins `DEVELOPMENT_TEAM` to the author's Apple Developer team. Change it to
+your own before building, or clear it and pick a team in Xcode's Signing & Capabilities.
+
 Targets: `CraftWatch` (iOS companion), `CraftWatch Watch App`, `CraftWatchWidget`.
 Bundle IDs live under `ai.redclay.craftwatch`; App Group `group.ai.redclay.craftwatch` is
 shared by the Watch app and its widget. Signing is automatic against team `3RPG92BQ9C`.
@@ -276,3 +279,7 @@ Xcode ▸ Window ▸ Devices and Simulators ▸ Simulators.
 Not built yet: MCP-backed natural-language commands ("add a follow-up with
 Ryan tomorrow"), and background refresh to keep the complication warm without opening
 the app.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
