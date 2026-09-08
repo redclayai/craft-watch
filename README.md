@@ -32,9 +32,19 @@ The commands used are the same ones Craft's own CLI exposes:
 tasks list --scope active
 tasks add --markdown "…" --schedule today
 tasks update --id <id> --state done
-blocks get --date today          # -> today's Daily Note page id
-blocks add --id <pageId> --markdown "…" --position end
+blocks add --date today --markdown "…" --position end
 ```
+
+Two things about that last one, both learned the hard way:
+
+- **`blocks add --date` is undocumented but creates the Daily Note if that day has none.**
+  The obvious approach — `blocks get --date today` for the page id, then `blocks add --id`
+  — fails outright on any day whose note does not exist yet, which is most mornings, and
+  silently queued every Daily Note capture.
+- **Craft reports command failures as plain `<error>…</error>` text**, with no `isError`
+  flag and no JSON. A caller that only checks a JSON `success` field reads a failure as a
+  success, so `CraftMCPClient` now rejects that text centrally for reads and writes
+  alike.
 
 ## Spoken due dates
 

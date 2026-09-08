@@ -10,6 +10,7 @@ nonisolated enum SharedDefaults {
         static let updatedAt = "openTaskCountUpdatedAt"
         static let pendingCount = "pendingCaptureCount"
         static let signOutReason = "lastSignOutReason"
+        static let captureError = "lastCaptureError"
     }
 
     private static var store: UserDefaults? { UserDefaults(suiteName: suiteName) }
@@ -41,6 +42,20 @@ nonisolated enum SharedDefaults {
                 store.set(newValue, forKey: Key.signOutReason)
             } else {
                 store.removeObject(forKey: Key.signOutReason)
+            }
+        }
+    }
+
+    /// Why the most recent capture could not be sent. A bare "waiting to send" count
+    /// gives no way to tell a lost network from a broken request.
+    static var lastCaptureError: String? {
+        get { store?.string(forKey: Key.captureError) }
+        set {
+            guard let store else { return }
+            if let newValue {
+                store.set(newValue, forKey: Key.captureError)
+            } else {
+                store.removeObject(forKey: Key.captureError)
             }
         }
     }

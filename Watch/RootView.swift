@@ -70,10 +70,20 @@ struct RootView: View {
                     Button {
                         Task { await store.flushPending() }
                     } label: {
-                        Label(
-                            "\(store.pendingCount) waiting to send",
-                            systemImage: "arrow.up.circle"
-                        )
+                        VStack(alignment: .leading, spacing: 2) {
+                            Label(
+                                "\(store.pendingCount) waiting to send",
+                                systemImage: "arrow.up.circle"
+                            )
+                            // Without this a stuck queue is indistinguishable from a
+                            // queue that is merely offline.
+                            if let reason = store.lastCaptureError {
+                                Text(reason)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(3)
+                            }
+                        }
                     }
                 }
             }

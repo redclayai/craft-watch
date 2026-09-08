@@ -20,6 +20,7 @@ final class CraftStore {
     private(set) var isConnected = false
     private(set) var spaceName: String?
     private(set) var pendingCount = 0
+    private(set) var lastCaptureError: String? = SharedDefaults.lastCaptureError
     private(set) var lastRefresh: Date?
     var status: Status = .idle
 
@@ -152,13 +153,16 @@ final class CraftStore {
         do {
             try await api.capture(outgoing, to: target, scheduleDay: scheduleDay)
             CraftLog.capture.log("Captured to \(target.rawValue, privacy: .public)")
+            lastCaptureError = nil
+            SharedDefaults.lastCaptureError = nil
             WKInterfaceDevice.current().play(.success)
             status = .saved(confirmation)
             await refresh()
         } catch {
-            CraftLog.capture.error(
-                "Capture failed, queueing: \(Self.message(for: error), privacy: .public)"
-            )
+            let reason = Self.message(for: error)
+            CraftLog.capture.error("Capture failed, queueing: \(reason, privacy: .public)")
+            lastCaptureError = reason
+            SharedDefaults.lastCaptureError = reason
             await queue.enqueue(
                 PendingCapture(text: outgoing, destination: target, scheduleDay: scheduleDay)
             )
@@ -192,6 +196,8 @@ final class CraftStore {
         let delivered = await queue.flush(using: api)
         pendingCount = await queue.count
         if delivered > 0 {
+            lastCaptureError = nil
+            SharedDefaults.lastCaptureError = nil
             status = .saved("Sent \(delivered) queued \(delivered == 1 ? "capture" : "captures")")
         }
     }

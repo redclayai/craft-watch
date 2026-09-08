@@ -78,7 +78,17 @@ actor CraftMCPClient {
         if let isError = result["isError"] as? Bool, isError {
             throw CraftError.rpc(code: -1, message: Self.textContent(of: result))
         }
-        return Self.textContent(of: result)
+
+        let text = Self.textContent(of: result)
+
+        // Craft reports command failures as plain `<error>…</error>` text with no
+        // isError flag and no JSON, so an unchecked caller reads a failure as a success.
+        if let failure = Self.craftErrorText(in: text) {
+            CraftLog.mcp.error("Craft command failed: \(failure, privacy: .public)")
+            throw CraftError.rpc(code: -1, message: failure)
+        }
+
+        return text
     }
 
     /// Craft's tool names are stable, but resolving them from `tools/list` means a rename
@@ -99,6 +109,15 @@ actor CraftMCPClient {
             }
         }
         throw CraftError.toolUnavailable(candidates.joined(separator: " or "))
+    }
+
+    private static func craftErrorText(in output: String) -> String? {
+        let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.hasPrefix("<error>") else { return nil }
+        return trimmed
+            .replacingOccurrences(of: "<error>", with: "")
+            .replacingOccurrences(of: "</error>", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private static func textContent(of result: [String: Any]) -> String {

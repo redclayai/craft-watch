@@ -57,12 +57,13 @@ nonisolated struct CraftAPI: Sendable {
         try await runWrite("tasks update --id \(Self.quote(taskID)) --state done")
     }
 
-    func appendToDailyNote(_ text: String) async throws {
-        let page = try await client.read("blocks get --date today")
-        guard let pageID = Self.pageID(in: page) else {
-            throw CraftError.malformedResponse("Could not find today's Daily Note")
-        }
-        try await runWrite("blocks add --id \(Self.quote(pageID)) --markdown \(Self.quote(text)) --position end")
+    /// Appends to a Daily Note, creating it if that day has none yet.
+    ///
+    /// `blocks add --date` is undocumented but does both, which matters: looking the page
+    /// up first with `blocks get --date today` fails outright on any day whose note does
+    /// not exist yet — which is most mornings — and there is no page id to append to.
+    func appendToDailyNote(_ text: String, day: String = "today") async throws {
+        try await runWrite("blocks add --date \(Self.quote(day)) --markdown \(Self.quote(text)) --position end")
     }
 
     func capture(_ text: String, to destination: Destination, scheduleDay: String? = nil) async throws {
@@ -86,10 +87,6 @@ nonisolated struct CraftAPI: Sendable {
             let message = object["error"] as? String ?? object["message"] as? String ?? "Craft rejected the change"
             throw CraftError.rpc(code: -1, message: message)
         }
-    }
-
-    private static func pageID(in output: String) -> String? {
-        output.firstMatch(of: /<page id="([^"]+)">/).map { String($0.1) }
     }
 
     /// The command string is parsed shell-style, so arguments need double quoting with
