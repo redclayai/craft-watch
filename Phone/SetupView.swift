@@ -23,7 +23,7 @@ struct SetupView: View {
 
                 StateSections(handoff: handoff)
             }
-            .navigationTitle("Craft Watch")
+            .navigationTitle("Wristnote")
         }
     }
 
@@ -109,7 +109,7 @@ private struct StateSections: View {
         if handoff.isWatchMissing {
             Section {
                 Label(
-                    "No Apple Watch with Craft Watch installed was found. You can still sign in — the credentials are held and sent as soon as the Watch app appears.",
+                    "No Apple Watch with Wristnote installed was found. You can still sign in — the credentials are held and sent as soon as the Watch app appears.",
                     systemImage: "applewatch.slash"
                 )
                 .font(.footnote)
@@ -150,7 +150,7 @@ struct HandoffStatus {
                 label: "Watch app not installed",
                 symbol: "applewatch.slash",
                 tint: .orange,
-                detail: "Install Craft Watch on your Apple Watch. Your credentials are saved and will be sent as soon as it appears.",
+                detail: "Install Wristnote on your Apple Watch. Your credentials are saved and will be sent as soon as it appears.",
                 isWatchMissing: true
             )
         }

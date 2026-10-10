@@ -13,7 +13,7 @@ struct RootView: View {
                     ConnectPromptView()
                 }
             }
-            .navigationTitle("Craft")
+            .navigationTitle("Wristnote")
             .toolbar {
                 if store.isConnected {
                     ToolbarItem(placement: .topBarTrailing) {

@@ -1,4 +1,4 @@
-# Craft Watch
+# Wristnote
 
 A native Apple Watch app for [Craft](https://craft.do): raise your wrist, dictate a task or
 note, and it lands in Craft — **with your iPhone locked, or not there at all.**

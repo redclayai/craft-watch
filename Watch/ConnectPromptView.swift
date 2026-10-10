@@ -22,7 +22,7 @@ struct ConnectPromptView: View {
                         .multilineTextAlignment(.center)
                 }
 
-                Text("Open Craft Watch on your iPhone and connect again. After that this app works on its own — no phone needed.")
+                Text("Open Wristnote on your iPhone and connect again. After that this app works on its own — no phone needed.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

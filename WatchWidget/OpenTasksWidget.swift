@@ -11,7 +11,7 @@ struct OpenTasksWidget: Widget {
                 .widgetURL(URL(string: "craftwatch://capture"))
                 .containerBackground(.fill.tertiary, for: .widget)
         }
-        .configurationDisplayName("Craft Tasks")
+        .configurationDisplayName("Wristnote Tasks")
         .description("Open tasks due today. Tap to dictate a new one.")
         .supportedFamilies([
             .accessoryCircular,

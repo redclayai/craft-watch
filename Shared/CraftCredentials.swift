@@ -25,6 +25,6 @@ nonisolated struct CraftCredentials: Codable, Sendable, Equatable {
 nonisolated enum CraftEndpoint {
     static let resource = URL(string: "https://mcp.craft.do/my/mcp")!
     static let redirectURI = "craftwatch://oauth"
-    static let clientName = "Craft Watch"
+    static let clientName = "Wristnote"
     static let appGroup = "group.ai.redclay.craftwatch"
 }

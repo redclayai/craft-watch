@@ -17,13 +17,13 @@ nonisolated enum CraftError: LocalizedError, Sendable {
     var errorDescription: String? {
         switch self {
         case .notConnected:
-            "Not connected to Craft. Open Craft Watch on your iPhone to connect."
+            "Not connected to Craft. Open Wristnote on your iPhone to connect."
         case let .http(status, body):
             "Craft returned HTTP \(status). \(body.prefix(200))"
         case let .oauth(detail):
             "Sign-in failed: \(detail)"
         case .grantExpired:
-            "Craft signed this Watch out. Open Craft Watch on your iPhone and connect again."
+            "Craft signed this Watch out. Open Wristnote on your iPhone and connect again."
         case let .rpc(code, message):
             "Craft error \(code): \(message)"
         case let .toolUnavailable(name):
